@@ -1,0 +1,15 @@
+version: '2'
+services:
+  nginx:
+    image: nginx:1.14.0
+    ports:
+     - "8085:80"
+    volumes:
+     - ./freelancer/:/freelancer/
+     - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    links:
+        - php7.0
+  php7.0:
+    build: ./php
+    volumes:
+     - ./freelancer/:/freelancer/
