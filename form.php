@@ -11,31 +11,31 @@
    <div class="col-md-6 col-sm-6 col-xs-12">
     <form method="post" action="submit.php">
      <div class="form-group ">
-      <label class="control-label " for="name">
+      <label class="control-label " for="sku">
        SKU
       </label>
-      <input class="form-control" id="name" name="name" type="text"/>
+      <input class="form-control" id="sku" name="sku" type="text"/>
      </div>
      <div class="form-group ">
-      <label class="control-label requiredField" for="email">
+      <label class="control-label requiredField" for="name">
        Name
        <span class="asteriskField">
         *
        </span>
       </label>
-      <input class="form-control" id="email" name="email" type="text"/>
+      <input class="form-control" id="name" name="name" type="text"/>
      </div>
      <div class="form-group ">
-      <label class="control-label " for="subject">
+      <label class="control-label " for="price">
        Price
       </label>
-      <input class="form-control" id="subject" name="subject" type="text"/>
+      <input class="form-control" id="price" name="price" type="text"/>
      </div>
      <div class="form-group ">
-      <label class="control-label " for="name1">
+      <label class="control-label " for="qty">
        Quantity
       </label>
-      <input class="form-control" id="name1" name="name1" type="text"/>
+      <input class="form-control" id="qty" name="qty" type="text"/>
      </div>
      <div class="form-group">
       <div>
