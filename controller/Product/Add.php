@@ -5,11 +5,38 @@
         
         public function submit()
         {
+            $attributes = $_REQUEST['attribute'];
+            $options = $_REQUEST['optionValue'];
+            $attributeListParams = $this->convertValueToArray($attributes, $options);
+            
             $attributeName = $_REQUEST['attribute-set'];
             $productName = $_REQUEST['name'];
             $productSku = $_REQUEST['sku'];
             $productPrice = $_REQUEST['price'];
             $productQty = $_REQUEST['qty'];
+            
+            var_dump($this->createNewAttribute('test'));die;
+            $productAttributeList = $this->getProductAttributes();
+            
+            //Get product attributes name for search
+            $productAttributesName = array();
+            if ($productAttributeList) {
+                $productAttributesName = array_column($productAttributeList['items'], 'default_frontend_label');
+            }
+            
+            //Check exist product attribute
+            $attributeSaver = array();
+            if (!empty($attributeListParams)) {
+                foreach ($attributeListParams as $attribute => $option) {
+                    if (!in_array($attribute, $productAttributesName)) {
+                        $attributeSaver[] = $this->productAttributeNotExist($attribute, $option);
+                    }
+                    else {
+                        $attributeSaver[] = $this->productAttributeExist($attribute, $option, $productAttributeList);
+                    }
+                }
+            }
+            
             // echo '<pre>';
             // var_dump($this->isExistAttributeSet($attributeName));die;
             if ($this->isExistAttributeSet($attributeName) == null) {
@@ -21,6 +48,146 @@
                 $this->addProduct($attributeName, $productSku, $productPrice, $productQty, $attributeId);
                 echo 'tao thanh cong 1';
             }
+        }
+        
+        /**
+         * 
+         * @param array $attributes
+         * @param array $options
+         * @return type
+         */
+        protected function convertValueToArray($attributes, $options)  
+        {
+            $arrayList = array();
+            foreach ($attributes as $key => $attribute) {
+                $arrayList[$attribute] = $options[$key];
+            }
+            return $arrayList;
+        }
+
+        /**
+         * Get all product attributes
+         * 
+         * @return $array
+         */
+        protected function getProductAttributes()
+        {
+            $params = $this->getSearchCriteria(0, 'is_visible', 'eq', 1);
+            $checkAttributeSetUrl = Add::serverUrl.'rest/all/V1/products/attributes?';
+            $ch = curl_init();
+            $ch = curl_init($checkAttributeSetUrl.http_build_query($params)); 
+            $adminToken = $this->getAdminToken("admin", "admin123");
+            $headers = array(
+                'Content-Type: application/json',                                                                                
+                'Authorization: Bearer '.$adminToken
+            ); 
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers); 
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);   
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");            
+            curl_setopt($ch, CURLOPT_POST, false);
+            
+            $result = curl_exec($ch);
+            
+            $arrayResult = json_decode($result, true);
+        
+            return $arrayResult;
+        }
+        
+        /**
+         * Get search criteria 
+         * 
+         * @param int $serial
+         * @param string $field
+         * @param string $conditionType
+         * @param string $value
+         */
+        protected function getSearchCriteria($serial, $field, $conditionType, $value)
+        {
+            $prefix = sprintf('searchCriteria[filter_groups][%s][filters][%s]', $serial, $serial);
+            return 
+                array(
+                    $prefix.'[field]' => $field,
+                    $prefix.'[condition_type]' => $conditionType,
+                    $prefix.'[value]' => $value
+                );
+        }
+
+        /**
+         * Create product attribute if not exist
+         * 
+         * @param string $attribute
+         * @param string $option
+         * @return array
+         */
+        protected function productAttributeNotExist($attribute, $option)
+        {
+            return $array;
+        }
+        
+        /**
+         * Find product attribute name and add product option
+         * 
+         * @param string $attribute
+         * @param string $option
+         * @param array $productAttributeList
+         * @return array
+         */
+        protected function productAttributeExist($attribute, $option, $productAttributeList) 
+        {
+            return $array;
+        }
+        
+        protected function createNewAttribute($attributeName)
+        {
+            $adminToken = $this->getAdminToken("admin", "admin123");
+            $headers = array(
+                'Content-Type: application/json',                                                                                
+                'Authorization: Bearer '.$adminToken
+            ); 
+            $requestUrl = Add::serverUrl.'rest/all/V1/products/attributes';
+
+            $ch = curl_init();
+            $ch = curl_init($requestUrl); 
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers); 
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);   
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");            
+            curl_setopt($ch, CURLOPT_POST, true);
+            
+            $attributeParams = array();
+            $attribute = array();
+            $attribute['is_wysiwyg_enabled'] = true;
+            $attribute['is_html_allowed_on_front'] = true;
+            $attribute['used_for_sort_by'] = true;
+            $attribute['is_filterable'] = true;
+            $attribute['is_filterable_in_search'] = true;
+            $attribute['is_used_in_grid'] = true;
+            $attribute['is_filterable_in_grid'] = true;
+            $attribute['position'] = 0;
+            $attribute['apply_to'] = array();
+            $attribute['is_searchable'] = true;
+            $attribute['is_visible_in_advanced_search'] = true;
+            $attribute['is_comparable'] = true;
+            $attribute['is_used_for_promo_rules'] = true;
+            $attribute['is_visible_on_front'] = true;
+            $attribute['used_in_product_listing'] = true;
+            $attribute['is_visible'] = true;
+            $attribute['scope'] = 'store';
+            $attribute['attribute_code'] = strtolower(str_replace(' ','_',trim($attributeName)));
+            $attribute['frontend_input'] = 'text';
+            $attribute['entity_type_id'] = 4;
+            $attribute['is_required'] = true;
+            $attribute['options'] = array();
+            $attribute['is_user_defined'] = true;
+            $attribute['default_frontend_label'] = $attributeName;
+            $attribute['frontend_labels'] = array();
+            $attribute['backend_type'] = 'varchar';
+            $attribute['is_unique'] = true;
+            $attribute['validation_rules'] = array();
+            $attributeParams['attribute'] = $attribute;
+      
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($attributeParams));     
+            $result = curl_exec($ch);
+            return $result;
         }
         
         protected function isExistAttributeSet($name)

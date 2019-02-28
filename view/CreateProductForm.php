@@ -73,12 +73,12 @@
                             </div>
                             <div class="col-sm-5 nopadding">
                                 <div class="form-group">
-                                    <input type="text" class="form-control" id="attribute" name="attribute" value="" placeholder="Attribute">
+                                    <input type="text" class="form-control" name="attribute[]" value="" placeholder="Attribute">
                                 </div>
                             </div>
                             <div class="col-sm-5 nopadding">
                                 <div class="form-group">
-                                    <input type="text" class="form-control" id="atrvalue" name="atrvalue" value="" placeholder="Value">
+                                    <input type="text" class="form-control" name="optionValue[]" value="" placeholder="Value">
                                 </div>
                             </div>
 
@@ -121,12 +121,12 @@
         var rdiv = 'removeclass' + room;
         divtest.innerHTML = `<div class="col-sm-5 nopadding">
     <div class="form-group">
-        <input type="text" class="form-control" id="attribute" name="attribute" value="" placeholder="Attribute">
+        <input type="text" class="form-control" name="attribute[]" value="" placeholder="Attribute">
     </div>
 </div>
 <div class="col-sm-5 nopadding">
     <div class="form-group">
-        <input type="text" class="form-control" id="atrvalue" name="atrvalue" value="" placeholder="Value">
+        <input type="text" class="form-control" name="optionValue[]" value="" placeholder="Value">
     </div>
 </div>
 <div class="col-sm-2 nopadding">
