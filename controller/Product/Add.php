@@ -115,6 +115,7 @@
         protected function productAttributeNotExist($attribute, $option)
         {
             $response = json_decode($this->createNewAttribute($attribute), true);
+			$this->createNewOption($response['attribute_code'], $option);
             return 
                 array(
                     'attribute_code' => $response['attribute_code'],
@@ -134,7 +135,7 @@
         {
             foreach ($productAttributeList['items'] as $item) {
                 if ($item['default_frontend_label'] == $attribute) {
-                    $this->createNewOption($item['attribute_id'], $option);
+                    $this->createNewOption($item['attribute_code'], $option);
                     return 
                         array(
                             'attribute_code' => $item['attribute_code'],
@@ -145,16 +146,17 @@
         }
         
         /**
-         * @param int $attribute_id
+         * @param string $attribute_code
          * @param string $option
          */
-        protected function createNewOption($attribute_id, $option)
+        protected function createNewOption($attribute_code, $option)
         {
+			$option = (string)$option;
             $headers = array(
                 'Content-Type: application/json',                                                                                
                 'Authorization: Bearer '.$this->adminToken
             ); 
-            $requestUrl = Add::serverUrl.sprintf('rest/all/V1/products/attributes/%s/options', $attribute_id);
+            $requestUrl = Add::serverUrl.sprintf('rest/all/V1/products/attributes/%s/options', $attribute_code);
 
             $ch = curl_init();
             $ch = curl_init($requestUrl); 
@@ -168,8 +170,7 @@
             $optionParams['option']['value'] = $option;
             $optionParams['option']['sort_order'] = 0;
             $optionParams['option']['is_default'] = true;
-            $optionParams['option']['store_labels'] = array();
-            
+            $optionParams['option']['store_labels'] = array("store_id" => 0, "label" => $option);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($optionParams));     
             $result = curl_exec($ch);
             return $result;
