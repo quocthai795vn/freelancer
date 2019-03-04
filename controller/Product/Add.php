@@ -41,7 +41,8 @@
                     }
                 }
             }
-            $this->addProduct($productName, $productSku, $productPrice, $productQty, json_encode($attributeSaver));
+            $productResponse = json_decode($this->addProduct($productName, $productSku, $productPrice, $productQty, json_encode($attributeSaver)), true);
+            $this->addConfigurableProduct($productName.'configurable', $productSku.'configurable', $productPrice, $productResponse['id']);
         }
         
         /**
@@ -114,8 +115,8 @@
          */
         protected function productAttributeNotExist($attribute, $option)
         {
-            $response = json_decode($this->createNewAttribute($attribute), true);
-			$this->createNewOption($response['attribute_code'], $option);
+            $response = json_decode($this->createNewAttribute($attribute, $option), true);
+//			$this->createNewOption($response['attribute_code'], $option);
             return 
                 array(
                     'attribute_code' => $response['attribute_code'],
@@ -169,7 +170,7 @@
             $optionParams['option']['label'] = $option;
             $optionParams['option']['value'] = $option;
             $optionParams['option']['sort_order'] = 0;
-            $optionParams['option']['is_default'] = true;
+            $optionParams['option']['is_default'] = false;
             $optionParams['option']['store_labels'] = array("store_id" => 0, "label" => $option);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($optionParams));     
             $result = curl_exec($ch);
@@ -180,10 +181,12 @@
          * Create new product attribute 
          * 
          * @param string $attributeName
+         * @param string $option
          * @return string
          */
-        protected function createNewAttribute($attributeName)
+        protected function createNewAttribute($attributeName, $option)
         {
+            $attributeName = (string) $attributeName;
             $headers = array(
                 'Content-Type: application/json',                                                                                
                 'Authorization: Bearer '.$this->adminToken
@@ -199,7 +202,7 @@
             
             $attributeParams = array();
             $attribute = array();
-            $attribute['is_wysiwyg_enabled'] = true;
+            $attribute['is_wysiwyg_enabled'] = false;
             $attribute['is_html_allowed_on_front'] = true;
             $attribute['used_for_sort_by'] = true;
             $attribute['is_filterable'] = true;
@@ -208,9 +211,9 @@
             $attribute['is_filterable_in_grid'] = true;
             $attribute['position'] = 0;
             $attribute['apply_to'] = array();
-            $attribute['is_searchable'] = true;
-            $attribute['is_visible_in_advanced_search'] = true;
-            $attribute['is_comparable'] = true;
+            $attribute['is_searchable'] = 0;
+            $attribute['is_visible_in_advanced_search'] = 0;
+            $attribute['is_comparable'] = 0;
             $attribute['is_used_for_promo_rules'] = true;
             $attribute['is_visible_on_front'] = true;
             $attribute['used_in_product_listing'] = true;
@@ -219,15 +222,54 @@
             $attribute['attribute_code'] = strtolower(str_replace(' ','_',trim($attributeName)));
             $attribute['frontend_input'] = 'multiselect';
             $attribute['entity_type_id'] = 4;
-            $attribute['is_required'] = true;
-            $attribute['options'] = array();
+            $attribute['is_required'] = false;
+            $attribute['options'] = array(
+                array('label' => $option, 'value' => $option)
+            );
             $attribute['is_user_defined'] = true;
             $attribute['default_frontend_label'] = $attributeName;
-            $attribute['frontend_labels'] = array();
+            $attribute['frontend_labels'] = null;
             $attribute['backend_type'] = 'varchar';
             $attribute['is_unique'] = true;
+            $attribute['default_value'] = $option;
             $attribute['validation_rules'] = array();
             $attributeParams['attribute'] = $attribute;
+      
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($attributeParams));     
+            $result = curl_exec($ch);
+            $data = json_decode($result, true);
+            $this->addAttributeToGroup(4, 7, $data['attribute_code']);
+            return $result;
+        }
+        
+        /**
+         * Add Attribute to group
+         * 
+         * @param int $setId
+         * @param int $groupId
+         * @param string $attributeCode
+         * @return array
+         */
+        protected function addAttributeToGroup($setId, $groupId, $attributeCode)
+        {
+            $headers = array(
+                'Content-Type: application/json',                                                                                
+                'Authorization: Bearer '.$this->adminToken
+            ); 
+            $requestUrl = Add::serverUrl.'rest/all/V1/products/attribute-sets/attributes';
+
+            $ch = curl_init();
+            $ch = curl_init($requestUrl); 
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers); 
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);   
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");            
+            curl_setopt($ch, CURLOPT_POST, true);
+            
+            $attributeParams = array();
+            $attributeParams['attributeSetId'] = $setId;
+            $attributeParams['attributeGroupId'] = $groupId;
+            $attributeParams['attributeCode'] = $attributeCode;
+            $attributeParams['sortOrder'] = 0;
       
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($attributeParams));     
             $result = curl_exec($ch);
@@ -319,6 +361,48 @@
             return $data['attribute_set_id'];
         }
         
+        protected function addConfigurableProduct($productName, $productSku, $productPrice, $simpleIds) {
+            $headers = array(
+                'Content-Type: application/json',                                                                                
+                'Authorization: Bearer '.$this->adminToken
+            ); 
+            $requestUrl = Add::serverUrl.'rest/all/V1/products';
+            $ch = curl_init();
+            $ch = curl_init($requestUrl); 
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers); 
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);   
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");            
+            curl_setopt($ch, CURLOPT_POST, true);
+            $post = '{
+              "product": {
+                "sku": "'.$productSku.'",
+                "name": "'.$productName.'",
+                "attributeSetId": 4,
+                "price": '.$productPrice.',
+                "status": 1,
+                "visibility": 4,
+                "typeId": "configurable",
+                "weight": 0,
+                "extensionAttributes": {
+                  "website_ids": [
+                    0
+                  ],
+                  "configurable_product_links": [
+                    '.$simpleIds.'
+                  ]
+                },
+                "options": [],
+                "tierPrices": [],
+                "customAttributes": [
+                ]
+              },
+              "saveOptions": true
+            }';
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $post);     
+            $result = curl_exec($ch);
+            print_r($result);
+        }
+        
         protected function addProduct($productName, $productSku, $productPrice, $productQty, $attributeCode)
         {
           
@@ -381,10 +465,9 @@
               },
               "saveOptions": true
             }';
-            var_dump($post);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $post);     
             $result = curl_exec($ch);
-            print_r($result);
+            return $result;
         }
     }
     
